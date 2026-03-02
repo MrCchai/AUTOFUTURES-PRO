@@ -1,0 +1,18 @@
+[Unit]
+Description=AutoFutures Realtime Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/autofutures-rt
+Environment=PATH=/home/ubuntu/autofutures-rt/venv/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/autofutures-rt/venv/bin/python main.py
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

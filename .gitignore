@@ -1,0 +1,11 @@
+﻿.env
+*.pem
+__pycache__/
+logs/
+venv/
+.terraform/
+*.tfstate*
+*.zip
+*.exe
+.idea/
+.vscode/
