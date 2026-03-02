@@ -1,0 +1,33 @@
+﻿name: Deploy AutoFutures Bot (Safety Mode)
+
+on:
+  # push:
+  #   branches: [ main ]  # ปิดการรันอัตโนมัติไว้ตามคำสั่งบอส
+  workflow_dispatch:      # เปิดให้ "กดรันเอง" ได้จากหน้าเว็บ GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "autofutures-rt-v2/autofutures-rt/*"
+          target: "/home/ubuntu/autofutures-rt"
+          strip_components: 2
+
+      - name: Restart Bot Service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo systemctl restart autofutures-rt
+            systemctl status autofutures-rt
