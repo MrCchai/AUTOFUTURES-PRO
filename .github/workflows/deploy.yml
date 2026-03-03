@@ -1,9 +1,7 @@
-﻿name: Deploy AutoFutures Bot (Safety Mode)
+﻿name: Deploy AutoFutures Bot V14
 
 on:
-  # push:
-  #   branches: [ main ]  # ปิดการรันอัตโนมัติไว้ตามคำสั่งบอส
-  workflow_dispatch:      # เปิดให้ "กดรันเอง" ได้จากหน้าเว็บ GitHub
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,16 +16,39 @@ jobs:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "autofutures-rt-v2/autofutures-rt/*"
+          source: "./*"
           target: "/home/ubuntu/autofutures-rt"
-          strip_components: 2
+          rm: true
+          exclude: ".git,.github,.terraform,*.tf,*.tfstate*,*.pem,.env,venv,logs"
 
-      - name: Restart Bot Service
+      - name: Setup Environment and Restart
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            cd /home/ubuntu/autofutures-rt
+            if [ ! -d "venv" ]; then python3 -m venv venv; fi
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            # Create a basic .service file if it doesn't exist
+            sudo bash -c "cat << 'SVC' > /etc/systemd/system/autofutures-rt.service
+            [Unit]
+            Description=AutoFutures DOGE V14
+            After=network.target
+
+            [Service]
+            User=ubuntu
+            WorkingDirectory=/home/ubuntu/autofutures-rt
+            ExecStart=/home/ubuntu/autofutures-rt/venv/bin/python main.py
+            Restart=always
+
+            [Install]
+            WantedBy=multi-user.target
+            SVC"
+            
+            sudo systemctl daemon-reload
             sudo systemctl restart autofutures-rt
-            systemctl status autofutures-rt
+            sudo systemctl status autofutures-rt

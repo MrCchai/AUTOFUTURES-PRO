@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DOGE RAPID-FIRE V14</title>
+<script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  body { background: #0b0e11; color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+  .header { height: 60px; background: #1e2329; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid #f0b90b; }
+  .main { display: grid; grid-template-columns: 300px 1fr 300px; flex: 1; overflow: hidden; }
+  .col { border-right: 1px solid #2a2e39; display: flex; flex-direction: column; padding: 15px; }
+  .stat { background: #1e2329; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #f0b90b; }
+  .val { font-size: 24px; font-weight: bold; color: #f0b90b; }
+  #chart { flex: 1; }
+  .logs { flex: 1; background: #000; font-family: monospace; font-size: 12px; padding: 10px; overflow-y: auto; color: #0ecb81; }
+</style></head>
+<body>
+  <div class="header">
+    <div style="font-size: 20px; font-weight: bold;">🐶 DOGE <span style="color:#f0b90b">RAPID-FIRE V14</span></div>
+    <div id="price" style="margin-left: auto; font-size: 24px; font-weight: bold;">0.00000</div>
+  </div>
+  <div class="main">
+    <div class="col">
+      <div class="stat"><div>Balance</div><div id="bal" class="val">0.00</div></div>
+      <div style="font-size: 12px; color: #848e9c; margin-bottom: 5px;">LIVE ANALYSIS</div>
+      <div id="logs" class="logs"></div>
+    </div>
+    <div class="col" style="padding:0;"><div id="chart"></div></div>
+    <div class="col">
+      <div style="font-size: 12px; color: #848e9c; margin-bottom: 5px;">TRADE HISTORY</div>
+      <div id="history" class="logs" style="color:#fff;"></div>
+    </div>
+  </div>
+  <script>
+    let chart, series;
+    function init() {
+      chart = LightweightCharts.createChart(document.getElementById('chart'), { layout: { backgroundColor: '#0b0e11', textColor: '#848e9c' }, grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } } });
+      series = chart.addCandlestickSeries({ upColor: '#0ecb81', downColor: '#f6465d' });
+      const ws = new WebSocket('ws://' + location.hostname + ':8080');
+      ws.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if(d.price) document.getElementById('price').innerText = d.price.toFixed(5);
+        if(d.balance) document.getElementById('bal').innerText = d.balance.toFixed(2) + ' USDT';
+        if(d.candles) series.setData(d.candles.map(c => ({ time: c.open_time/1000, open: c.open, high: c.high, low: c.low, close: c.close })));
+        if(d.logs) document.getElementById('logs').innerHTML = d.logs.map(l => '<div>['+l.time+'] '+l.msg+'</div>').join('');
+        if(d.history) document.getElementById('history').innerHTML = d.history.map(h => '<div>['+h.time+'] '+h.side+' @ '+h.price+'</div>').join('');
+      };
+    }
+    window.onload = init;
+  </script>
+</body></html>
