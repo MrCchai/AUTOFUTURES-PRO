@@ -1,37 +1,44 @@
-﻿import asyncio, json, http.server, threading, websockets
+import asyncio, json, logging, http.server, threading
 from pathlib import Path
-from websockets.server import serve
+from urllib.parse import urlparse, parse_qs
+
+logger = logging.getLogger(__name__)
 
 class DashboardServer:
     def __init__(self, settings, bot):
         self.settings = settings
         self.bot = bot
-        self.clients = set()
-        bot.register_callback(self._broadcast)
-        self.html_path = Path(__file__).parent.parent / "static" / "dashboard.html"
+        self.html_path = Path(__file__).parent.parent / 'static' / 'dashboard.html'
 
     async def start(self):
-        async with serve(self._handle, self.settings.DASHBOARD_HOST, self.settings.DASHBOARD_PORT):
-            threading.Thread(target=self._run_http, daemon=True).start()
-            await asyncio.Future()
+        host = '0.0.0.0'
+        port = 8080
+        logger.info('Starting Professional Dashboard on Port ' + str(port))
+        threading.Thread(target=self._run_http, args=(host, port), daemon=True).start()
+        await asyncio.Future()
 
-    async def _handle(self, ws):
-        self.clients.add(ws)
-        try:
-            await ws.send(json.dumps(self.bot.get_state(), default=str))
-            async for m in ws: pass
-        finally: self.clients.discard(ws)
-
-    async def _broadcast(self, data):
-        if self.clients: websockets.broadcast(self.clients, json.dumps(data, default=str))
-
-    def _run_http(self):
-        path = self.html_path
-        class H(http.server.BaseHTTPRequestHandler):
+    def _run_http(self, host, port):
+        bot = self.bot
+        html_path = self.html_path
+        class Handler(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html")
-                self.end_headers()
-                self.wfile.write(path.read_bytes())
-            def log_message(self, *a): pass
-        http.server.HTTPServer(("0.0.0.0", 8081), H).serve_forever()
+                parsed_path = urlparse(self.path)
+                if parsed_path.path == '/api/data':
+                    params = parse_qs(parsed_path.query)
+                    symbol = params.get('symbol', [None])[0]
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    try:
+                        self.wfile.write(json.dumps(bot.get_state(full=True, symbol=symbol), default=str).encode())
+                    except:
+                        self.wfile.write(b'{}')
+                else:
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write(html_path.read_bytes())
+            def log_message(self, *args): pass
+        http.server.HTTPServer((host, port), Handler).serve_forever()

@@ -1,47 +1,175 @@
-﻿<!DOCTYPE html><html><head><meta charset="UTF-8"><title>DOGE RAPID-FIRE V14</title>
-<script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
-<style>
-  body { background: #0b0e11; color: #fff; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-  .header { height: 60px; background: #1e2329; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid #f0b90b; }
-  .main { display: grid; grid-template-columns: 300px 1fr 300px; flex: 1; overflow: hidden; }
-  .col { border-right: 1px solid #2a2e39; display: flex; flex-direction: column; padding: 15px; }
-  .stat { background: #1e2329; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #f0b90b; }
-  .val { font-size: 24px; font-weight: bold; color: #f0b90b; }
-  #chart { flex: 1; }
-  .logs { flex: 1; background: #000; font-family: monospace; font-size: 12px; padding: 10px; overflow-y: auto; color: #0ecb81; }
-</style></head>
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>🧪 AI-MULTI BOT V14.41</title>
+    <script src='https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js'></script>
+    <link href='https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap' rel='stylesheet'>
+    <style>
+        :root { --bg: #05070a; --card: #0f1218; --accent: #f0b90b; --text: #eaecef; --dim: #848e9c; --green: #0ecb81; --red: #f6465d; --border: #1e2329; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { height: 60px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; justify-content: space-between; }
+        .main-layout { display: grid; grid-template-columns: 400px 1fr; flex: 1; overflow: hidden; }
+        .sidebar { background: var(--card); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+        .content { display: flex; flex-direction: column; overflow: hidden; }
+        .stat-group { padding: 15px; }
+        .card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .label { font-size: 10px; color: var(--dim); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .value { font-family: 'JetBrains Mono'; font-size: 20px; font-weight: 800; color: var(--accent); }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; color: var(--dim); padding: 8px; border-bottom: 1px solid var(--border); }
+        td { padding: 8px; border-bottom: 1px solid var(--border); }
+        .sym-row { transition: all 0.2s; }
+        .sym-row:hover { background: rgba(240, 185, 11, 0.05); cursor: pointer; }
+        .active-sym { background: rgba(240, 185, 11, 0.1) !important; border-left: 3px solid var(--accent); }
+
+        #chart-container { flex: 1; position: relative; min-height: 300px; }
+        .history-panel { height: 250px; background: var(--card); border-top: 1px solid var(--border); overflow-y: auto; padding: 10px; }
+        .log-item { font-family: 'JetBrains Mono'; font-size: 11px; margin-bottom: 4px; border-left: 2px solid var(--accent); padding-left: 8px; color: var(--text); }
+        .neg { color: var(--red); }
+        .pos { color: var(--green); }
+        .pnl-tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: 'JetBrains Mono'; }
+        .pnl-pos { background: rgba(14, 203, 129, 0.2); color: var(--green); }
+        .pnl-neg { background: rgba(246, 70, 93, 0.2); color: var(--red); }
+        .jetbrains { font-family: 'JetBrains Mono'; }
+    </style>
+</head>
 <body>
-  <div class="header">
-    <div style="font-size: 20px; font-weight: bold;">🐶 DOGE <span style="color:#f0b90b">RAPID-FIRE V14</span></div>
-    <div id="price" style="margin-left: auto; font-size: 24px; font-weight: bold;">0.00000</div>
-  </div>
-  <div class="main">
-    <div class="col">
-      <div class="stat"><div>Balance</div><div id="bal" class="val">0.00</div></div>
-      <div style="font-size: 12px; color: #848e9c; margin-bottom: 5px;">LIVE ANALYSIS</div>
-      <div id="logs" class="logs"></div>
+    <header>
+        <div style='display:flex; align-items:center; gap:15px;'>
+            <div style='font-weight:800; color:var(--accent); font-size:20px;'>🧪 AI-MULTI V14.41</div>
+            <div id='global-status' style='font-size:12px; background:var(--green); color:#000; padding:2px 8px; border-radius:4px; font-weight:800;'>ACTIVE</div>
+        </div>
+        <div style='display:flex; gap:30px; align-items:center;'>
+            <div style='text-align:right;'><div class='label'>Wallet Balance</div><div id='total-bal' class='value'>0.00 USDT</div></div>
+            <div style='text-align:right;'><div class='label'>Total Daily PnL</div><div id='daily-pnl' class='value'>0.0000</div></div>
+        </div>
+    </header>
+
+    <div class='main-layout'>
+        <div class='sidebar'>
+            <div class='stat-group'>
+                <div class='label'>Market Performance</div>
+                <table id='symbol-table'>
+                    <thead><tr><th>Symbol</th><th>Price</th><th>RSI</th><th>Unrealized</th></tr></thead>
+                    <tbody id='symbol-list'></tbody>
+                </table>
+            </div>
+            
+            <div class='stat-group' style='flex:1;'>
+                <div class='label'>Live AI Strategy Logs</div>
+                <div id='logs' style='font-size:10px; height:400px; overflow-y:auto; background:#000; padding:10px; border-radius:5px;'></div>
+            </div>
+        </div>
+
+        <div class='content'>
+            <div style='padding:12px; background:var(--card); display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border);'>
+                <div id='active-symbol-title' style='font-weight:800; font-size:16px; color:var(--accent)'>XRPUSDT AI INSIGHTS</div>
+                <div id='ai-stats' style='display:flex; gap:20px; font-size:13px;'>
+                    <span>AI Confidence: <b id='active-prob' class='pos'>--</b></span>
+                    <span>SL: <b id='active-sl'>--</b></span>
+                    <span>TP: <b id='active-tp'>--</b></span>
+                </div>
+            </div>
+            <div id='chart-container'></div>
+            <div class='history-panel'>
+                <div class='label'>Recent Executions</div>
+                <table id='history-table'>
+                    <thead><tr><th>Time</th><th>Symbol</th><th>Result</th><th>Entry</th><th>Exit</th><th>PnL %</th><th>PnL USDT</th></tr></thead>
+                    <tbody id='history-list'></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div class="col" style="padding:0;"><div id="chart"></div></div>
-    <div class="col">
-      <div style="font-size: 12px; color: #848e9c; margin-bottom: 5px;">TRADE HISTORY</div>
-      <div id="history" class="logs" style="color:#fff;"></div>
-    </div>
-  </div>
-  <script>
-    let chart, series;
-    function init() {
-      chart = LightweightCharts.createChart(document.getElementById('chart'), { layout: { backgroundColor: '#0b0e11', textColor: '#848e9c' }, grid: { vertLines: { color: '#1e2329' }, horzLines: { color: '#1e2329' } } });
-      series = chart.addCandlestickSeries({ upColor: '#0ecb81', downColor: '#f6465d' });
-      const ws = new WebSocket('ws://' + location.hostname + ':8080');
-      ws.onmessage = (e) => {
-        const d = JSON.parse(e.data);
-        if(d.price) document.getElementById('price').innerText = d.price.toFixed(5);
-        if(d.balance) document.getElementById('bal').innerText = d.balance.toFixed(2) + ' USDT';
-        if(d.candles) series.setData(d.candles.map(c => ({ time: c.open_time/1000, open: c.open, high: c.high, low: c.low, close: c.close })));
-        if(d.logs) document.getElementById('logs').innerHTML = d.logs.map(l => '<div>['+l.time+'] '+l.msg+'</div>').join('');
-        if(d.history) document.getElementById('history').innerHTML = d.history.map(h => '<div>['+h.time+'] '+h.side+' @ '+h.price+'</div>').join('');
-      };
-    }
-    window.onload = init;
-  </script>
-</body></html>
+
+    <script>
+        let chart, series, activeSymbol = 'XRPUSDT';
+        
+        function initChart() {
+            chart = LightweightCharts.createChart(document.getElementById('chart-container'), {
+                layout: { backgroundColor: '#05070a', textColor: '#848e9c' },
+                grid: { vertLines: { color: '#0f1218' }, horzLines: { color: '#0f1218' } },
+                timeScale: { timeVisible: true, secondsVisible: false },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+            });
+            series = chart.addCandlestickSeries({ 
+                upColor: '#0ecb81', downColor: '#f6465d', 
+                borderVisible: false, wickUpColor: '#0ecb81', wickDownColor: '#f6465d' 
+            });
+        }
+
+        const updateUI = (data) => {
+            document.getElementById('total-bal').innerText = data.balance.toFixed(2) + ' USDT';
+            document.getElementById('daily-pnl').innerText = (data.daily_pnl >= 0 ? '+' : '') + data.daily_pnl.toFixed(4) + ' USDT';
+            document.getElementById('daily-pnl').className = 'value ' + (data.daily_pnl >= 0 ? 'pos' : 'neg');
+
+            // Update Symbol Table
+            let html = '';
+            data.all_symbols.forEach(sym => {
+                const price = data.all_prices[sym] || 0;
+                const ind = data.all_indicators[sym] || {};
+                const pnl = data.all_positions[sym];
+                const isActive = sym === activeSymbol;
+                
+                html += `<tr class='sym-row ${isActive ? "active-sym" : ""}' onclick="switchSymbol('${sym}')">
+                    <td style='font-weight:700'>${sym}</td>
+                    <td class='jetbrains'>${price < 10 ? price.toFixed(5) : price.toFixed(2)}</td>
+                    <td class='jetbrains'>${ind.rsi || '--'}</td>
+                    <td class='jetbrains ${parseFloat(pnl) >= 0 ? "pos" : "neg"}'>${pnl ? parseFloat(pnl).toFixed(2) : "0.00"}</td>
+                </tr>`;
+                
+                if(isActive) {
+                    document.getElementById('active-symbol-title').innerText = sym + ' AI INSIGHTS';
+                    document.getElementById('active-prob').innerText = ind.ai_status || '--';
+                    document.getElementById('active-sl').innerText = (ind.dynamic_sl || '0') + '%';
+                    document.getElementById('active-tp').innerText = (ind.dynamic_tp || '0') + '%';
+                }
+            });
+            document.getElementById('symbol-list').innerHTML = html;
+
+            // Update Logs
+            document.getElementById('logs').innerHTML = data.logs.map(l => `<div class='log-item'>[${l.time}] ${l.msg}</div>`).join('');
+
+            // Update History
+            document.getElementById('history-list').innerHTML = data.trade_history.map(h => `<tr>
+                <td>${h.time}</td>
+                <td style='font-weight:800'>${h.symbol}</td>
+                <td class='${h.pnl >=0 ? "pos":"neg"}'>${h.pnl >= 0 ? "PROFIT":"LOSS"}</td>
+                <td class='jetbrains'>${h.entry}</td>
+                <td class='jetbrains'>${h.exit}</td>
+                <td class='jetbrains ${h.pnl >=0 ? "pos":"neg"}'>${h.pnl}%</td>
+                <td><span class='pnl-tag ${h.pnl_usdt >=0 ? "pnl-pos":"pnl-neg"}'>${h.pnl_usdt.toFixed(4)}</span></td>
+            </tr>`).join('');
+
+            // Update Chart
+            if(data.candles) {
+                series.setData(data.candles.map(c => ({ 
+                    time: c.open_time/1000, 
+                    open: c.open, high: c.high, low: c.low, close: c.close 
+                })));
+            }
+        };
+
+        const switchSymbol = (sym) => { 
+            activeSymbol = sym; 
+            series.setData([]); // Clear chart while loading
+            refresh(); 
+        };
+
+        const refresh = async () => {
+            try {
+                // Modified backend needed to support ?symbol=
+                const res = await fetch(window.location.origin + '/api/data?symbol=' + activeSymbol);
+                if(res.ok) updateUI(await res.json());
+            } catch(e) { console.error('Refresh Error:', e); }
+        };
+
+        window.onload = () => { 
+            initChart(); 
+            refresh(); 
+            setInterval(refresh, 5000); 
+        };
+    </script>
+</body>
+</html>
